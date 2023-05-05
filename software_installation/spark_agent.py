@@ -207,7 +207,7 @@ class Action(object):
 
 # %s avec % permet de formatter un string de diverse manières. %.2f indique d'arrondir un float au deuxième chiffre après la virgule
 # Les lignes au dessus disent : '(on formate un string et on arrondit un float)   %    (le nom de la commande et la valeur de la vitesse)
-# la fonction return un string (psk '' ) qui est la concaténation du string de toutes les vitesses et du string de toutes les stiffness
+# la fonction return un string (psk '' ) qui est la concaténation du string de toutes les vitesses et du string de toutes les stiffness.
 
 class SparkAgent(object):
     def __init__(self, simspark_ip='localhost',
