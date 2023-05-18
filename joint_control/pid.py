@@ -5,14 +5,17 @@
     2. adjust PID parameters for NAO in simulation
 
 * Hints:
-    1. the motor in simulation can simple modelled by angle(t) = angle(t-1) + speed * dt
+    1. the motor in simulation can simple modelled by angle(t) = angle(t-1) + speed * dt 
     2. use self.y to buffer model prediction
 '''
+
 
 # add PYTHONPATH
 import os
 import sys
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'software_installation'))
+#sys.path.append('C:\Users\TheCh\OneDrive\Documents\Cours TUB\SommerSemester2023\Robocup\programming-humanoid-robot-in-python\software_installation')
+###########target - sensor + prediction without - prediction with
 
 import numpy as np
 from collections import deque
@@ -30,21 +33,21 @@ class PIDController(object):
         @param delay: delay in number of steps
         '''
         self.dt = dt
-        self.u = np.zeros(size)
+        self.u = np.zeros(size)   #array des torques ?
         self.e1 = np.zeros(size)
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
         delay = 0
-        self.Kp = 0
-        self.Ki = 0
-        self.Kd = 0
-        self.y = deque(np.zeros(size), maxlen=delay + 1)
+        self.Kp = 10
+        self.Ki = 10
+        self.Kd = 10
+        self.y = deque(np.zeros((delay + 1, size)), maxlen=delay + 1) #modifié par moi. deque qui contient (delay + 1) arrays de taille (size)
 
     def set_delay(self, delay):
         '''
         @param delay: delay in number of steps
         '''
-        self.y = deque(self.y, delay + 1)
+        self.y = deque(self.y, delay + 1)   #reformate y à la taille maxlen = delay+1 (change le nombre d'array dans le deque)
 
     def control(self, target, sensor):
         '''apply PID control
@@ -53,8 +56,13 @@ class PIDController(object):
         @return control signal
         '''
         # YOUR CODE HERE
-
-        return self.u
+        prediction = sensor*self.u*self.dt  #prediction de l'angle au prochain temps avec l'angle delayed et la vitesse delayed
+        self.y.appendleft(prediction) #à gauche du deque on a la prediction pour le temps suivant
+        e = target - (sensor + self.y[0] - self.y[-1]) #error = ref - (y_delay + y_pred_nodelay - y_pred_delay)
+        self.u = self.u + (self.Kp + self.Ki*self.dt + self.Kd/self.dt)*e - (self.Kp + 2*self.Kd/self.dt)*self.e1 + self.Kd*self.e2/self.dt
+        self.e2 = self.e1  #on actualise les erreurs passées
+        self.e1 = e
+        return self.u #self.u sera la vitesse qu'on va ordonner aux joints
 
 
 class PIDAgent(SparkAgent):
@@ -79,7 +87,7 @@ class PIDAgent(SparkAgent):
         target_angles = np.asarray([self.target_joints.get(joint_id, 
             perception.joint[joint_id]) for joint_id in JOINT_CMD_NAMES])
         u = self.joint_controller.control(target_angles, joint_angles)
-        action.speed = dict(zip(JOINT_CMD_NAMES.keys(), u))  # dict: joint_id -> speed
+        action.speed = dict(zip(JOINT_CMD_NAMES.keys(), u))  # creates a dict: joint_id -> speed (self.u)
         return action
 
 
