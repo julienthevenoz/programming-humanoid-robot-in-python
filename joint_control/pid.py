@@ -38,9 +38,9 @@ class PIDController(object):
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
         delay = 0
-        self.Kp = 10
-        self.Ki = 10
-        self.Kd = 10
+        self.Kp = 25
+        self.Ki = 0.5
+        self.Kd = 0.1
         self.y = deque(np.zeros((delay + 1, size)), maxlen=delay + 1) #modifié par moi. deque qui contient (delay + 1) arrays de taille (size)
 
     def set_delay(self, delay):
@@ -56,10 +56,14 @@ class PIDController(object):
         @return control signal
         '''
         # YOUR CODE HERE
-        prediction = sensor*self.u*self.dt  #prediction de l'angle au prochain temps avec l'angle delayed et la vitesse delayed
+        prediction = sensor + self.u*self.dt  #prediction de l'angle au prochain temps avec l'angle delayed et la vitesse delayed
         self.y.appendleft(prediction) #à gauche du deque on a la prediction pour le temps suivant
-        e = target - (sensor + self.y[0] - self.y[-1]) #error = ref - (y_delay + y_pred_nodelay - y_pred_delay)
-        self.u = self.u + (self.Kp + self.Ki*self.dt + self.Kd/self.dt)*e - (self.Kp + 2*self.Kd/self.dt)*self.e1 + self.Kd*self.e2/self.dt
+        e = target - (sensor + self.y[0] - self.y[-1]) #error = ref - (y_delayed + ỹ_nodelay - ỹ_delayed)
+        P = (self.Kp + self.Ki*self.dt + self.Kd/self.dt)*e
+        I = -(self.Kp + 2*self.Kd/self.dt)*self.e1
+        D = (self.Kd / self.dt) * self.e2
+        self.u = self.u + P + I + D
+        
         self.e2 = self.e1  #on actualise les erreurs passées
         self.e1 = e
         return self.u #self.u sera la vitesse qu'on va ordonner aux joints
