@@ -44,8 +44,6 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         # YOUR CODE HERE
         
         joint_list = ['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch']
-        #angles_data = np.array(len(joint_list) + 2)  #créé un array assez grand pour stocker tous les joints + AngleX & AngleY
-        
         angles_data = []
         for joint, jointname in enumerate(joint_list):
           #print(perception.joint[jointname])
@@ -54,19 +52,13 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         #ajoute les valeurs AngleX & AngleY manuellement à al fin de l'array
         angles_data.append(perception.imu[0])
         angles_data.append(perception.imu[1])
-        #changing the shape of array angles data from 1d to 2d so it can be used with predict
-        #angles_data = angles_data.reshape((-1,1))
-        #prediction of the pose
-        pose_predicted = self.posture_classifier.predict([angles_data])
-        #copied from learn_posture.ipynb
-        # ROBOT_POSE_DATA_DIR = 'robot_pose_data' 
-        # classes = listdir(ROBOT_POSE_DATA_DIR)
-        # posture = classes[pose_predicted]
-        
+    
+        #on prédit la pose
+        pose_prediction = self.posture_classifier.predict([angles_data])
 
         robot_pose_data_path = os.path.join(self.dir, 'robot_pose_data')
-        posture = os.listdir(robot_pose_data_path)[pose_predicted[0]]
-
+        posture = os.listdir(robot_pose_data_path)[pose_prediction[0]]
+        #print(posture)
         return posture
 
 if __name__ == '__main__':
