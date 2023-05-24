@@ -11,7 +11,7 @@
 
 
 from angle_interpolation import AngleInterpolationAgent
-from keyframes import hello
+from keyframes import hello, leftBackToStand, leftBellyToStand
 import pickle 
 import os
 import numpy as np #nécessaire ?
@@ -44,17 +44,17 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         # YOUR CODE HERE
         
         joint_list = ['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch']
-        angles_data = []
+        angles_vector = []
         for joint, jointname in enumerate(joint_list):
           #print(perception.joint[jointname])
-          angles_data.append(perception.joint[jointname])
+          angles_vector.append(perception.joint[jointname])
 
         #ajoute les valeurs AngleX & AngleY manuellement à al fin de l'array
-        angles_data.append(perception.imu[0])
-        angles_data.append(perception.imu[1])
+        angles_vector.append(perception.imu[0])
+        angles_vector.append(perception.imu[1])
     
         #on prédit la pose
-        pose_prediction = self.posture_classifier.predict([angles_data])
+        pose_prediction = self.posture_classifier.predict([angles_vector])
 
         robot_pose_data_path = os.path.join(self.dir, 'robot_pose_data')
         posture = os.listdir(robot_pose_data_path)[pose_prediction[0]]
@@ -63,5 +63,5 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
 
 if __name__ == '__main__':
     agent = PostureRecognitionAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = leftBellyToStand()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
