@@ -32,8 +32,7 @@ class PostureRecognitionAgent(AngleInterpolationAgent):
         self.dir = os.path.dirname(__file__) #ça donne le path qui amène à ce fichier
         robot_pose_pkl_path = os.path.join(self.dir, ROBOT_POSE_CLF)  #ajoute le path du fichier au .pkl
         self.posture_classifier = pickle.load(open(robot_pose_pkl_path, 'rb'))
-        # with open(ROBOT_POSE_CLF, 'rb') as nom_fichier:
-        #     self.posture_classifier = pickle.load(nom_fichier)
+    
 
     def think(self, perception):
         self.posture = self.recognize_posture(perception)

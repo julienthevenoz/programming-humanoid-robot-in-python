@@ -23,9 +23,9 @@ class StandingUpAgent(PostureRecognitionAgent):
         elif posture == 'Back':
             print('leftbacktostand')
             self.keyframes = leftBackToStand()
-        elif posture == 'Headback':
-            print('leftbacktostand')
-            self.keyframes = leftBackToStand()
+        # elif posture == 'Headback':
+        #     print('leftbacktostand')
+        #     self.keyframes = leftBackToStand()
         elif posture == 'Left':
             print('leftbacktostand')
             self.keyframes = leftBackToStand()
