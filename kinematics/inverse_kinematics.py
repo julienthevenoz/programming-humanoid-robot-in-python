@@ -14,6 +14,7 @@ from forward_kinematics import ForwardKinematicsAgent
 from numpy.matlib import identity
 import numpy as np
 from autograd import grad
+from scipy.optimize import fmin
 
 
 class InverseKinematicsAgent(ForwardKinematicsAgent):
@@ -35,6 +36,7 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
 
         target = self.from_trans(transform).T #target is the array (transposed) of x,y,z,x-,y- and z-angle given through the 'transform' matrix
         
+        
 
         for i in range(1000):
             self.forward_kinematics(angles_chain)       #execute forward kin for the chain
@@ -42,15 +44,20 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
             T_iteration = self.from_trans(forward_kin(last_joint))  #we get the coordinates & angles of the last joint
             e= target - T_iteration #error is the distance between where last joint should be and where it is
             err = np.linalg.norm(e)
-            d = grad(err)
+            #d = grad(err)
+            d = grad(target, T_iteration)
 
-            new_angles = d * 
+            #new_angles = d * 
+
+            #optimised = fmin(err, joint_angles)
             
             joint_angles += new_angles
 
             if(d < 10^(-4)):
                 break
 
+            
+           
         return joint_angles
 
     def set_transforms(self, effector_name, transform):
@@ -74,8 +81,7 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
 
         return np.asarray([x,y,z,x_angle,y_angle,z_angle])
     
-        
-
+   
 if __name__ == '__main__':
     agent = InverseKinematicsAgent()
     # test inverse kinematics

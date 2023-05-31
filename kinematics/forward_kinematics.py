@@ -78,11 +78,8 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
 
         T[0:3, 0:3] = R  #insert appropriate rotation matrix in top left of transform matrix
 
-        T[0,3] = self.link_translation[joint_name][0]  #put the translation elements in the transfo matrix
-        T[1,3] = self.link_translation[joint_name][1]
-        T[2,3] = self.link_translation[joint_name][2]
-        
-        
+
+        T[-1, 0:3] = self.link_translation[joint_name]       #put the translation elements in the transfo matrix. Convention : translation goes in bottom row
         return T
 
     def forward_kinematics(self, joints):
@@ -91,13 +88,14 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
         :param joints: {joint_name: joint_angle}
         '''
         for chain_joints in self.chains.values():
-            T = identity(4)
+            T = identity(4)   
             for joint in chain_joints:
                 angle = joints[joint]
                 Tl = self.local_trans(joint, angle)
                 # YOUR CODE HERE
                 T = T * Tl              #multiplication matricielle T0_N = T0_1 * T1_2 * T1_3 etc
                 self.transforms[joint] = T
+                
 
 if __name__ == '__main__':
     agent = ForwardKinematicsAgent()
