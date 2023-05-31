@@ -15,6 +15,7 @@ from numpy.matlib import identity
 import numpy as np
 from autograd import grad
 from scipy.optimize import fmin
+from math import atan2
 
 
 class InverseKinematicsAgent(ForwardKinematicsAgent):
@@ -26,39 +27,29 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
         :return: list of joint angles
         '''
         joint_angles = []
-        # YOUR CODE HERE
-        joint_angles =  [0] * len(self.chains[effector_name]) #on prépare la liste à return avec le bon nombre d'angles
-        new_angles = [0] * len(self.chains[effector_name])  #variable intermédiaire qui fait la même taille
-
-        #on remplit le dict angles_chain avec le nom et l'angle actuel de chaque joint dans la chain de l'effector concerné
-        angles_chain = {key : self.perception.joint[key] for key in self.chains[effector_name]}  
-        last_joint = self.chains[effector_name][-1] # name of the last joint in the effector's chain
-
-        target = self.from_trans(transform).T #target is the array (transposed) of x,y,z,x-,y- and z-angle given through the 'transform' matrix
+        #YOUR CODE HERE 
+         
         
+        joint_names = self.chains[effector_name]
+        longueur= len(self.chains[effector_name])
+        
+        end_effector_name = self.chains[effector_name][longueur-1]
+        joint_angles = {key : self.perception.joint[key] 
+                        for key in self.chains[effector_name]} 
         
 
-        for i in range(1000):
-            self.forward_kinematics(angles_chain)       #execute forward kin for the chain
-            forward_kin = self.transforms               #save the transforms calculated by the forward kin
-            T_iteration = self.from_trans(forward_kin(last_joint))  #we get the coordinates & angles of the last joint
-            e= target - T_iteration #error is the distance between where last joint should be and where it is
-            err = np.linalg.norm(e)
-            #d = grad(err)
-            d = grad(target, T_iteration)
+        goal = np.matrix(self.from_trans(transform))
+        
+       
+        func = lambda t: self.error_func(t, goal, end_effector_name)
 
-            #new_angles = d * 
+        optimized = fmin(func, joint_angles.values)
+        joint_angles_dict = dict(zip(joint_names, optimized))
 
-            #optimised = fmin(err, joint_angles)
-            
-            joint_angles += new_angles
 
-            if(d < 10^(-4)):
-                break
-
-            
+        return joint_angles_dict
            
-        return joint_angles
+        
 
     def set_transforms(self, effector_name, transform):
         '''solve the inverse kinematics and control joints use the results
@@ -73,20 +64,26 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
             keys = [[self.perception[joint_name], [3,0,0], [3,0,0]], [angle_list[i], [3,0,0], [3,0,0]]]
         self.keyframes = (names, times, keys)
 
-
     
     def from_trans(self, T):         #find x,y,z,x_angle,y_angle,z_angle from the transfo matrix
         x, y, z = T[3,0], T[3,1], T[3,2]
         x_angle, y_angle, z_angle = 0, 0, 0
 
         if(T[0,0] == 1):        #if we have a 1 in top right corner we have a Rx matrix inside of T
-            x_angle = np.atan2(T[2,1], T[1,1])  #so x_angle = arctan(tan(theta))=arctan(sintheta/costheta) and all others are 0
+            x_angle = atan2(T[2,1], T[1,1])  #so x_angle = arctan(tan(theta))=arctan(sintheta/costheta) and all others are 0
         elif(T[1,1] == 1):      
-            y_angle = np.atan2(T[0,2], T[0,0]) #for a Ry matrix
+            y_angle = atan2(T[0,2], T[0,0]) #for a Ry matrix
         elif(T[2,2] == 1):
-            z_angle = np.atan2(T[0,1], T[0,0])  #for a Rz matrix
+            z_angle = atan2(T[0,1], T[0,0])  #for a Rz matrix
 
         return np.asarray([x,y,z,x_angle,y_angle,z_angle])
+    
+    def error_func(self, joint_angles, target, end_effector):
+        self.forward_kinematics[joint_angles]
+        total_transfo = self.transforms[end_effector] 
+        intermediate = np.matrix(self.get_goal_trans(total_transfo))
+        e = target -  intermediate
+        return np.linalg.norm(e)      
     
    
 if __name__ == '__main__':
