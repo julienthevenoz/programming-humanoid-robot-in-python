@@ -65,6 +65,13 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
         '''
         # YOUR CODE HERE
         self.keyframes = ([], [], [])  # the result joint angles have to fill in
+        angle_list = self.inverse_kinematics(effector_name, transform)
+        names = self.chains(effector_name)
+        times = [0, 3] * len(self.chains[effector_name])
+        #for keys we put the simplest key possible, just an angle and 0 for all handles
+        for i, joint_name in enumerate(names):
+            keys = [[self.perception[joint_name], [3,0,0], [3,0,0]], [angle_list[i], [3,0,0], [3,0,0]]]
+        self.keyframes = (names, times, keys)
 
 
     
