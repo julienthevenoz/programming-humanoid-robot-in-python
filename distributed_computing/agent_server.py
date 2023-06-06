@@ -72,7 +72,10 @@ class ServerAgent(InverseKinematicsAgent):
         e.g. return until keyframes are executed
         '''
         # YOUR CODE HERE
+        print('executing keyframes')
         self.keyframes = keyframes 
+        print('finished')
+        
 
     def get_transform(self, name):
         '''get transform with given name
