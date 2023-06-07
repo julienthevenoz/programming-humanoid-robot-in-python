@@ -34,12 +34,14 @@ class ServerAgent(InverseKinematicsAgent):
     def __init__(self):
         super(ServerAgent, self).__init__()   #on doit d'abord lancer le truc qui gère la co avec simspark
         server = SimpleXMLRPCServer(('localhost', 9999), logRequests=True, allow_none=True) #on créé le serveur sur mon ordi au port 9999
-                                                                           #logrequests print les tentaives de connection dans le terminal
-        server.register_instance(self)
+        #logrequests print les tentaives de connection dans le terminal. NB j'ai pas mis en attribut -> méthode de classe ? partagé par toutes les instances ? grave ?
 
-        # server.register_introspection_functions()
-        # server.register_multicall_functions()
-        #server.serve_forever()
+        server.register_instance(self)  #registers all the methods of the instance ServerAgent
+        # server.register_function(self.execute_keyframes_nonblocking)
+        # server.register_function(self.set_transform_nonblocking)
+
+
+     
         arg_list = []  #pour pouvoir passer des listes au thread
         self.thread_forever = threading.Thread(target = server.serve_forever, args = arg_list)  #lance le server en tant que thread
         self.thread_forever.start()  #useful ?
@@ -72,9 +74,12 @@ class ServerAgent(InverseKinematicsAgent):
         e.g. return until keyframes are executed
         '''
         # YOUR CODE HERE
-        print('executing keyframes')
+        #needs to be threaded to be non blocking ?
+        #print('executing keyframes')
         self.keyframes = keyframes 
-        print('finished')
+        self.start_time = self.perception.time 
+        print('blocking execute kf')
+        #print('finished')
         
 
     def get_transform(self, name):
@@ -89,7 +94,20 @@ class ServerAgent(InverseKinematicsAgent):
         # YOUR CODE HERE
         self.set_transforms(effector_name, transform)
 
+    # # my two nonblocking functions
+    # def execute_keyframes_nonblocking(self, keyframes):
+    #     execute_kf_thread = threading.Thread(target = self.execute_keyframes, args = [keyframes])
+    #     execute_kf_thread.start()
+    #     print('nonblock execute kf')
+    
+    # def set_transform_nonblocking(self, effector_name, transform):
+    #     arg_list = [effector_name, transform]
+    #     set_transform_thread = threading.Thead(target = self.set_transform, args = arg_list)
+    #     set_transform_thread.start()
+    
+
 if __name__ == '__main__':
     agent = ServerAgent()
     agent.run()
+
 
