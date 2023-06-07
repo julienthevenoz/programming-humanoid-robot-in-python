@@ -28,40 +28,60 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
         '''
         joint_angles = []
         #YOUR CODE HERE 
-         
+        joint_angles_dict = {} #make a dictionnary
         
-        joint_names = self.chains[effector_name]
-        longueur= len(self.chains[effector_name])
         
-        end_effector_name = self.chains[effector_name][longueur-1]
-        joint_angles = {key : self.perception.joint[key] 
+        lambda_ = 0.001
+
+        joint_angles_dict = {key : self.perception.joint[key] 
                         for key in self.chains[effector_name]} 
+        all_joint_angles_dict = self.perception.joint
         
 
-        goal = np.matrix(self.from_trans(transform))
+        target = np.array([self.from_trans(transform)]).T
+
+        for i in range(3000):
+            # self.forward_kinematics(all_joint_angles_dict)
+            self.forward_kinematics(joint_angles_dict)
+
+
+            T = [0] * len(self.chains[effector_name])
+            for i, name in enumerate(self.chains[effector_name]):
+                T[i] = self.transforms[name]
+
+            Te = np.array([self.from_trans(T[-1])])
+            e = target - Te
+            T = np.array([self.from_trans(i) for i in T[0:len(self.chains[effector_name])]])
+            J = (Te - T).T
+            J[-1, :] = 1
+            d_theta = lambda_ * np.dot(np.dot(J.T, np.linalg.pinv(np.dot(J, J.T))), e.T)
+
+            for i, name in enumerate(self.chains[effector_name]):
+                joint_angles_dict[name] += np.asarray(d_theta.T)[0][i]
+
+            if np.linalg.norm(d_theta) < 1e-4:
+                break
         
-       
-        func = lambda t: self.error_func(t, goal, end_effector_name)
-
-        optimized = fmin(func, joint_angles.values)
-        joint_angles_dict = dict(zip(joint_names, optimized))
-
-
+            #joint_angles = joint_angles_dict.values() #transform the dict back into a list
         return joint_angles_dict
            
         
 
-    def set_transforms(self, effector_name, transform):
+    def set_transforms(self, effector_name, transform):   
         '''solve the inverse kinematics and control joints use the results
         '''
         # YOUR CODE HERE
+        #this function gets a transformation matrix which indicates the orientation and position of the effector
         self.keyframes = ([], [], [])  # the result joint angles have to fill in
         angle_list = self.inverse_kinematics(effector_name, transform)
-        names = self.chains(effector_name)
-        times = [0, 3] * len(self.chains[effector_name])
+        names = self.chains[effector_name]
+        times = []
+        for k in range(len(names)):
+            times.append([0,3])     #we set the movement of every joint to last 3 seconds 
         #for keys we put the simplest key possible, just an angle and 0 for all handles
+        keys=[]
         for i, joint_name in enumerate(names):
-            keys = [[self.perception[joint_name], [3,0,0], [3,0,0]], [angle_list[i], [3,0,0], [3,0,0]]]
+            keys.append([[self.perception.joint[joint_name], [3,0,0], [3,0,0]], [angle_list[joint_name], [3,0,0], [3,0,0]]])
         self.keyframes = (names, times, keys)
 
     
@@ -78,19 +98,23 @@ class InverseKinematicsAgent(ForwardKinematicsAgent):
 
         return np.asarray([x,y,z,x_angle,y_angle,z_angle])
     
-    def error_func(self, joint_angles, target, end_effector):
+    def error_func(self, joint_angles_values, joint_angles_keys, target, end_effector):
+        joint_angles = dict(zip(joint_angles_keys, joint_angles_values)) #forced to do this because of fmin
         self.forward_kinematics[joint_angles]
         total_transfo = self.transforms[end_effector] 
         intermediate = np.matrix(self.get_goal_trans(total_transfo))
         e = target -  intermediate
-        return np.linalg.norm(e)      
+        norm = np.linalg.norm(e)
+        return norm     
     
    
 if __name__ == '__main__':
     agent = InverseKinematicsAgent()
     # test inverse kinematics
     T = identity(4)
-    T[-1, 1] = 0.05     #dernière ligne 2ème colonne    Ty ?
-    T[-1, 2] = -0.26    #dernière ligne 3ème colonne    Tz ?
+    T[-1, 1] = 0.1     #dernière ligne 2ème colonne    Ty ?
+    T[-1, 2] = -0.5    #dernière ligne 3ème colonne    Tz ?
+    agent.inverse_kinematics('LLeg', T)
     agent.set_transforms('LLeg', T)
+    print('here')
     agent.run()

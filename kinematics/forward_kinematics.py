@@ -90,11 +90,12 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
         for chain_joints in self.chains.values():
             T = identity(4)   
             for joint in chain_joints:
-                angle = joints[joint]
-                Tl = self.local_trans(joint, angle)
+                if(joint in joints):   #we only care about the joints in joints[], not all joints in self.chains
+                    angle = joints[joint]
+                    Tl = self.local_trans(joint, angle)
                 # YOUR CODE HERE
-                T = T * Tl              #multiplication matricielle T0_N = T0_1 * T1_2 * T1_3 etc
-                self.transforms[joint] = T
+                    T = T * Tl              #multiplication matricielle T0_N = T0_1 * T1_2 * T1_3 etc
+                    self.transforms[joint] = T
                 
 
 if __name__ == '__main__':
